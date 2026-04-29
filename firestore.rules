@@ -1,64 +1,27 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isRoomId(id) {
-      return id is string && id.matches('^[A-Z2-9]{4}$');
+    // Helper to validate session IDs
+    function isValidId(id) {
+      return id is string && id.size() >= 4 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    function isValidMenuLabel(label) {
-      return label is string && label.size() >= 1 && label.size() <= 40 && label.matches('^[^\\n\\r]+$');
-    }
-
-    function isValidFriendName(name) {
-      return name is string && name.size() >= 1 && name.size() <= 40 && name.matches('^[^\\n\\r]+$');
-    }
-
-    function isValidMenuPrice(price) {
-      return price is number && price >= 0 && price <= 1000;
-    }
-
-    function isValidFriendId(friendId) {
-      return friendId is string && friendId.matches('^[a-f0-9\\-]{8,64}$');
-    }
-
-    function isValidMenuId(itemId) {
-      return itemId is string && itemId.matches('^[a-zA-Z0-9_\\-]{1,64}$');
-    }
-
+    // Default deny
     match /{document=**} {
       allow read, write: if false;
     }
 
     match /sessions/{sessionId} {
-      allow get: if isRoomId(sessionId);
-      allow create: if isRoomId(sessionId)
-                    && !exists(/databases/$(database)/documents/sessions/$(sessionId))
-                    && request.resource.data.keys().hasOnly(['createdAt'])
-                    && request.resource.data.createdAt == request.time;
-      allow update, delete: if false;
+      allow get, create: if isValidId(sessionId);
       
       match /friends/{friendId} {
-        allow read: if isRoomId(sessionId) && isValidFriendId(friendId);
-        allow create, update: if isRoomId(sessionId)
-                              && isValidFriendId(friendId)
-                              && request.resource.data.keys().hasOnly(['id', 'name', 'counts'])
-                              && request.resource.data.id == friendId
-                              && isValidFriendName(request.resource.data.name)
-                              && request.resource.data.counts is map
-                              && request.resource.data.counts.size() <= 60;
-        allow delete: if isRoomId(sessionId) && isValidFriendId(friendId);
+        allow read: if true;
+        allow write: if true;
       }
       
       match /menu/{itemId} {
-        allow read: if isRoomId(sessionId) && isValidMenuId(itemId);
-        allow create, update: if isRoomId(sessionId)
-                              && isValidMenuId(itemId)
-                              && request.resource.data.keys().hasOnly(['id', 'label', 'price', 'isFavorite'])
-                              && request.resource.data.id == itemId
-                              && isValidMenuLabel(request.resource.data.label)
-                              && isValidMenuPrice(request.resource.data.price)
-                              && (!request.resource.data.keys().hasAny(['isFavorite']) || request.resource.data.isFavorite is bool);
-        allow delete: if isRoomId(sessionId) && isValidMenuId(itemId);
+        allow read: if true;
+        allow write: if true;
       }
     }
   }

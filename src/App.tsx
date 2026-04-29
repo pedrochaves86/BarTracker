@@ -27,14 +27,12 @@ interface Friend {
 }
 
 const INITIAL_MENU: MenuItem[] = [
-  { id: 'fino', label: 'Fino', price: 1.1, isFavorite: true },
-  { id: 'tulipa', label: 'Tulipa', price: 1.8 },
-  { id: 'caneca', label: 'Caneca', price: 2.5 },
-  { id: 'tremocos', label: 'Tremoços', price: 1.0, isFavorite: true },
+  { id: 'fino', label: 'Fino', price: 1.0, isFavorite: true },
+  { id: 'tulipa', label: 'Tulipa', price: 2.0 },
+  { id: 'caneca', label: 'Caneca', price: 3.5 },
+  { id: 'tremocos', label: 'Tremoços', price: 0.8, isFavorite: true },
   { id: 'mistura', label: 'Mistura', price: 1.0 },
 ];
-
-const ROOM_ID_REGEX = /^[A-Z2-9]{4}$/;
 
 function generateRoomId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -62,8 +60,8 @@ export default function App() {
 
   // Room Management
   useEffect(() => {
-    let hash = window.location.hash.replace('#', '').toUpperCase();
-    if (!ROOM_ID_REGEX.test(hash)) {
+    let hash = window.location.hash.replace('#', '');
+    if (!hash) {
       hash = generateRoomId();
       window.location.hash = hash;
     }
@@ -551,18 +549,25 @@ export default function App() {
       {/* Footer Summary (Compact & Expandable) */}
       {friends.length > 0 && (
         <motion.footer 
+          layout
           initial={{ y: 100 }} animate={{ y: 0 }}
-          className={`fixed bottom-4 left-4 right-4 bg-neutral-900 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 transition-all duration-300 ease-out overflow-hidden ${isFooterExpanded ? 'rounded-[32px] p-6' : 'rounded-full p-4 h-16'}`}
+          transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 35
+          }}
+          className={`fixed bottom-4 left-4 right-4 bg-neutral-900 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden ${isFooterExpanded ? 'rounded-[32px] p-6' : 'rounded-full p-4 h-16'}`}
           id="summary-footer"
         >
-          <div className="max-w-md mx-auto h-full flex flex-col cursor-pointer" onClick={() => setIsFooterExpanded(!isFooterExpanded)}>
+          <motion.div layout className="max-w-md mx-auto h-full flex flex-col cursor-pointer" onClick={() => setIsFooterExpanded(!isFooterExpanded)}>
             {/* Expanded Content */}
-            <AnimatePresence>
+            <AnimatePresence mode="popLayout">
               {isFooterExpanded && (
                 <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }} 
-                  animate={{ opacity: 1, scale: 1 }} 
-                  exit={{ opacity: 0, scale: 0.95 }}
+                  initial={{ opacity: 0, y: 10 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.15 }}
                   className="mb-6 space-y-4"
                 >
                   <div className="flex items-center justify-between border-b border-white/10 pb-4">
@@ -593,31 +598,31 @@ export default function App() {
             </AnimatePresence>
 
             {/* Always Visible Row (Grand Total) */}
-            <div className={`flex items-center justify-between w-full mt-auto ${!isFooterExpanded ? 'h-full' : 'pt-4 border-t border-white/10'}`}>
-              <div className="flex flex-col justify-center">
-                <span className={`text-[9px] font-black uppercase text-amber-500 tracking-[0.2em] ${!isFooterExpanded ? 'hidden xs:block text-neutral-500' : 'block'}`}>TOTAL DA MESA</span>
+            <motion.div layout className={`flex items-center justify-between w-full mt-auto ${!isFooterExpanded ? 'h-full' : 'pt-4 border-t border-white/10'}`}>
+              <motion.div layout className="flex flex-col justify-center">
+                <motion.span layout className={`text-[9px] font-black uppercase text-amber-500 tracking-[0.2em] ${!isFooterExpanded ? 'hidden xs:block text-neutral-500' : 'block'}`}>TOTAL DA MESA</motion.span>
                 <div className="flex items-baseline gap-1">
-                  <span className={`${isFooterExpanded ? 'text-4xl' : 'text-2xl'} font-black tracking-tighter tabular-nums leading-none transition-all`}>
+                  <motion.span layout className={`${isFooterExpanded ? 'text-4xl' : 'text-2xl'} font-black tracking-tighter tabular-nums leading-none transition-all`}>
                     {grandTotal.toFixed(2)}
-                  </span>
-                  <span className="text-base font-bold text-neutral-500 italic">€</span>
+                  </motion.span>
+                  <motion.span layout className="text-base font-bold text-neutral-500 italic">€</motion.span>
                 </div>
-              </div>
+              </motion.div>
               
-              <div className={`flex items-center gap-2 ${!isFooterExpanded ? '' : 'flex-col items-end'}`}>
+              <motion.div layout className={`flex items-center gap-2 ${!isFooterExpanded ? '' : 'flex-col items-end'}`}>
                 {!isFooterExpanded && (
-                  <div className="flex items-center gap-2 mr-2">
+                  <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 mr-2">
                      <span className="text-[10px] font-black text-neutral-500 bg-white/5 px-3 py-1 rounded-full uppercase tracking-tighter">
                        {friends.length} Amigos
                      </span>
-                  </div>
+                  </motion.div>
                 )}
-                <div className={`w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white transition-transform duration-300 ${isFooterExpanded ? 'rotate-180' : ''}`}>
+                <motion.div layout className={`w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white transition-transform duration-300 ${isFooterExpanded ? 'rotate-180' : ''}`}>
                   <ChevronUp size={20} />
-                </div>
-              </div>
-            </div>
-          </div>
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
         </motion.footer>
       )}
     </div>
