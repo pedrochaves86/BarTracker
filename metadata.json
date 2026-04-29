@@ -1,0 +1,6 @@
+{
+  "name": "BarTracker",
+  "description": "Controlo de consumo em tempo real para grupos de amigos. Partilha a tua mesa e gere finos, petiscos e contas em conjunto.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

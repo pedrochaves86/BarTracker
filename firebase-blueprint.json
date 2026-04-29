@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "An item in the bar menu",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "price": { "type": "number" },
+        "isFavorite": { "type": "boolean" }
+      },
+      "required": ["id", "label", "price"]
+    },
+    "Friend": {
+      "title": "Friend",
+      "description": "A friend at the table and their consumption counts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "counts": { 
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        }
+      },
+      "required": ["id", "name", "counts"]
+    },
+    "Session": {
+      "title": "Session",
+      "description": "A shared bar table session",
+      "type": "object",
+      "properties": {
+        "friends": {
+          "type": "array",
+          "items": { "$ref": "Friend" }
+        },
+        "menu": {
+          "type": "array",
+          "items": { "$ref": "MenuItem" }
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "/sessions/{sessionId}": {
+      "schema": { "type": "object", "properties": { "createdAt": { "type": "string" } } },
+      "description": "Shared table session metadata"
+    },
+    "/sessions/{sessionId}/friends/{friendId}": {
+      "schema": "Friend",
+      "description": "Real-time state for a friend"
+    },
+    "/sessions/{sessionId}/menu/{itemId}": {
+      "schema": "MenuItem",
+      "description": "Real-time state for a menu item"
+    }
+  }
+}
