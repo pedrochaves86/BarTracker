@@ -28,9 +28,9 @@ interface Friend {
 
 const INITIAL_MENU: MenuItem[] = [
   { id: 'fino', label: 'Fino', price: 1.0, isFavorite: true },
-  { id: 'tulipa', label: 'Tulipa', price: 2.0 },
-  { id: 'caneca', label: 'Caneca', price: 3.5 },
-  { id: 'tremocos', label: 'Tremoços', price: 0.8, isFavorite: true },
+  { id: 'tulipa', label: 'Tulipa', price: 1.8 },
+  { id: 'caneca', label: 'Caneca', price: 2.0 },
+  { id: 'tremocos', label: 'Tremoços', price: 1.0, isFavorite: true },
   { id: 'mistura', label: 'Mistura', price: 1.0 },
 ];
 
