@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Minus, UserPlus, Trash2, RotateCcw, Beer, Settings2, X, ChevronUp, ChevronDown, Star, Share2, Users, Check } from 'lucide-react';
+import { Plus, Minus, UserPlus, Trash2, RotateCcw, Beer, Settings2, X, ChevronUp, Star, Share2, Users, Check, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   collection, 
@@ -145,6 +145,7 @@ export default function App() {
 
   const removeMenuItem = async (id: string) => {
     if (!roomId) return;
+    if (itemTotals[id] > 0) return;
     if (confirm('Remover este item? Os registos dos teus amigos para este item serão apagados.')) {
       await deleteDoc(doc(db, 'sessions', roomId, 'menu', id));
       // Optionally clean up friend counts, but Firestore rules or simple UI filtering handles cases where item is gone
@@ -351,12 +352,12 @@ export default function App() {
                       type="number"
                       step="0.1"
                       min="0"
-                      placeholder="€"
+                      placeholder=""
                       value={newItemPrice || ''}
                       onChange={(e) => setNewItemPrice(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-neutral-100 border-none rounded-full px-4 py-2 text-sm font-bold outline-none pr-6"
+                      className="w-full bg-neutral-100 border-none rounded-full pl-3 pr-8 py-2 text-sm text-right tabular-nums font-bold outline-none"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400 font-bold">€</span>
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400 font-bold">€</span>
                   </div>
                   <button type="submit" className="bg-amber-500 text-white p-2 rounded-full shadow-md active:scale-90" id="add-item-btn">
                     <Plus size={20} />
@@ -381,23 +382,25 @@ export default function App() {
                             value={item.price}
                             onChange={(e) => updateItemPrice(item.id, parseFloat(e.target.value) || 0)}
                             readOnly={itemTotals[item.id] > 0}
-                            className={`w-full text-right text-[10px] font-black bg-neutral-50 px-2 py-1 rounded-lg outline-none transition-all ${itemTotals[item.id] > 0 ? 'text-neutral-400 cursor-not-allowed opacity-60' : 'text-amber-600'}`}
+                            className={`w-full text-right tabular-nums text-[10px] font-black bg-neutral-50 pl-2 pr-7 py-1 rounded-lg outline-none transition-all ${itemTotals[item.id] > 0 ? 'text-neutral-400 cursor-not-allowed opacity-60' : 'text-amber-600'}`}
                             id={`price-input-${item.id}`}
                           />
-                          <span className={`absolute right-1 top-1/2 -translate-y-1/2 text-[8px] font-bold ${itemTotals[item.id] > 0 ? 'text-neutral-300' : 'text-amber-600/50'}`}>
-                            {itemTotals[item.id] > 0 ? '🔒' : '€'}
+                          <span className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center ${itemTotals[item.id] > 0 ? 'text-neutral-300' : 'text-amber-600/50'}`}>
+                            {itemTotals[item.id] > 0 ? <Lock size={10} /> : <span className="text-[8px] font-bold">€</span>}
                           </span>
                         </div>
                         <button 
                           onClick={() => toggleFavorite(item.id)}
-                          className={`p-1.5 rounded-full transition-colors ${item.isFavorite ? 'text-amber-500 bg-amber-50' : 'text-neutral-200 hover:text-amber-300'}`}
+                          className={`p-1.5 rounded-full transition-colors ${item.isFavorite ? 'text-amber-600 bg-amber-100' : 'text-amber-500 bg-amber-50 hover:text-amber-600 hover:bg-amber-100'}`}
                           id={`favorite-item-${item.id}`}
                         >
                           <Star size={14} fill={item.isFavorite ? 'currentColor' : 'none'} />
                         </button>
                         <button 
-                          onClick={() => removeMenuItem(item.id)} 
-                          className="text-neutral-200 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-colors" 
+                          onClick={() => removeMenuItem(item.id)}
+                          disabled={itemTotals[item.id] > 0}
+                          title={itemTotals[item.id] > 0 ? 'Não podes apagar: item já está na conta de alguém' : 'Apagar item'}
+                          className={`p-1.5 rounded-full transition-colors ${itemTotals[item.id] > 0 ? 'text-neutral-200 cursor-not-allowed opacity-50' : 'text-red-500 bg-red-50 hover:text-red-600 hover:bg-red-100'}`}
                           id={`remove-item-${item.id}`}
                         >
                           <Trash2 size={14} />
@@ -548,35 +551,27 @@ export default function App() {
 
       {/* Footer Summary (Compact & Expandable) */}
       {friends.length > 0 && (
-        <motion.footer 
-          layout
-          initial={{ y: 100 }} animate={{ y: 0 }}
-          transition={{
-            type: "spring",
-            stiffness: 400,
-            damping: 35
-          }}
-          className={`fixed bottom-4 left-4 right-4 bg-neutral-900 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden ${isFooterExpanded ? 'rounded-[32px] p-6' : 'rounded-full p-4 h-16'}`}
-          id="summary-footer"
-        >
-          <motion.div layout className="max-w-md mx-auto h-full flex flex-col cursor-pointer" onClick={() => setIsFooterExpanded(!isFooterExpanded)}>
-            {/* Expanded Content */}
-            <AnimatePresence mode="popLayout">
+        <>
+          {isFooterExpanded && (
+            <button
+              type="button"
+              aria-label="Fechar resumo"
+              onClick={() => setIsFooterExpanded(false)}
+              className="fixed inset-0 z-40 bg-transparent"
+            />
+          )}
+          <footer
+            className={`fixed bottom-4 left-4 right-4 bg-neutral-900 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 overflow-hidden ${isFooterExpanded ? 'rounded-[32px] p-6' : 'rounded-full p-4 h-16'}`}
+            id="summary-footer"
+          >
+            <div className="max-w-md mx-auto h-full flex flex-col">
+              {/* Expanded Content */}
               {isFooterExpanded && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.15 }}
-                  className="mb-6 space-y-4"
-                >
+                <div className="mb-6 space-y-4">
                   <div className="flex items-center justify-between border-b border-white/10 pb-4">
                     <span className="text-[10px] font-black uppercase text-neutral-500 tracking-[0.2em]">{friends.length} AMIGOS NA MESA</span>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsFooterExpanded(false);
-                      }}
+                    <button
+                      onClick={() => setIsFooterExpanded(false)}
                       className="text-neutral-400 hover:text-white transition-colors p-1"
                     >
                       <X size={16} />
@@ -593,37 +588,36 @@ export default function App() {
                       <p className="col-span-2 text-center text-[10px] text-neutral-600 font-bold uppercase italic py-2">Sem consumo registado</p>
                     )}
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Always Visible Row (Grand Total) */}
-            <motion.div layout className={`flex items-center justify-between w-full mt-auto ${!isFooterExpanded ? 'h-full' : 'pt-4 border-t border-white/10'}`}>
-              <motion.div layout className="flex flex-col justify-center">
-                <motion.span layout className={`text-[9px] font-black uppercase text-amber-500 tracking-[0.2em] ${!isFooterExpanded ? 'hidden xs:block text-neutral-500' : 'block'}`}>TOTAL DA MESA</motion.span>
-                <div className="flex items-baseline gap-1">
-                  <motion.span layout className={`${isFooterExpanded ? 'text-4xl' : 'text-2xl'} font-black tracking-tighter tabular-nums leading-none transition-all`}>
-                    {grandTotal.toFixed(2)}
-                  </motion.span>
-                  <motion.span layout className="text-base font-bold text-neutral-500 italic">€</motion.span>
                 </div>
-              </motion.div>
-              
-              <motion.div layout className={`flex items-center gap-2 ${!isFooterExpanded ? '' : 'flex-col items-end'}`}>
-                {!isFooterExpanded && (
-                  <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 mr-2">
-                     <span className="text-[10px] font-black text-neutral-500 bg-white/5 px-3 py-1 rounded-full uppercase tracking-tighter">
-                       {friends.length} Amigos
-                     </span>
-                  </motion.div>
-                )}
-                <motion.div layout className={`w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white transition-transform duration-300 ${isFooterExpanded ? 'rotate-180' : ''}`}>
-                  <ChevronUp size={20} />
-                </motion.div>
-              </motion.div>
-            </motion.div>
-          </motion.div>
-        </motion.footer>
+              )}
+
+              {/* Always Visible Row (Grand Total) */}
+              <div className={`flex items-center justify-between w-full mt-auto ${isFooterExpanded ? 'pt-4 border-t border-white/10' : 'h-full'}`}>
+                <div className="flex flex-col justify-center">
+                  <span className="text-[9px] font-black uppercase text-neutral-500 tracking-[0.2em]">TOTAL DA MESA</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className={`${isFooterExpanded ? 'text-4xl' : 'text-2xl'} font-black tracking-[0.1em] tabular-nums leading-none`}>
+                      {grandTotal.toFixed(2)}
+                    </span>
+                    <span className={`${isFooterExpanded ? 'text-base' : 'text-sm'} font-bold text-neutral-500 italic`}>€</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsFooterExpanded(!isFooterExpanded)}
+                    aria-label={isFooterExpanded ? 'Minimizar resumo' : 'Expandir resumo'}
+                    className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white"
+                  >
+                    <span className={`motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out ${isFooterExpanded ? 'rotate-180' : 'rotate-0'}`}>
+                      <ChevronUp size={20} />
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </>
       )}
     </div>
   );
