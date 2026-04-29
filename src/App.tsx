@@ -27,12 +27,14 @@ interface Friend {
 }
 
 const INITIAL_MENU: MenuItem[] = [
-  { id: 'fino', label: 'Fino', price: 1.0, isFavorite: true },
-  { id: 'tulipa', label: 'Tulipa', price: 2.0 },
-  { id: 'caneca', label: 'Caneca', price: 3.5 },
-  { id: 'tremocos', label: 'Tremoços', price: 0.8, isFavorite: true },
+  { id: 'fino', label: 'Fino', price: 1.1, isFavorite: true },
+  { id: 'tulipa', label: 'Tulipa', price: 1.8 },
+  { id: 'caneca', label: 'Caneca', price: 2.5 },
+  { id: 'tremocos', label: 'Tremoços', price: 1.0, isFavorite: true },
   { id: 'mistura', label: 'Mistura', price: 1.0 },
 ];
+
+const ROOM_ID_REGEX = /^[A-Z2-9]{4}$/;
 
 function generateRoomId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -60,8 +62,8 @@ export default function App() {
 
   // Room Management
   useEffect(() => {
-    let hash = window.location.hash.replace('#', '');
-    if (!hash) {
+    let hash = window.location.hash.replace('#', '').toUpperCase();
+    if (!ROOM_ID_REGEX.test(hash)) {
       hash = generateRoomId();
       window.location.hash = hash;
     }
