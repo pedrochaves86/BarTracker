@@ -5,6 +5,11 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,15 +32,12 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Upload artifacts
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
 
   deploy:
     needs: build
-    permissions:
-      pages: write
-      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -43,4 +45,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
