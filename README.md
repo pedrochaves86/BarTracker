@@ -2,19 +2,24 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# BarTracker
 
-This contains everything you need to run your app locally.
+Aplicacao para controlo de consumo em tempo real para grupos de amigos.
 
-View your app in AI Studio: https://ai.studio/apps/1d8cd2e2-79aa-4edd-9728-b882764145d3
+Site publico: https://pedrochaves86.github.io/BarTracker/
 
-## Run Locally
+## Run Localmente
 
-**Prerequisites:**  Node.js
+Prerequisitos: Node.js
 
+1. Instalar dependencias:
+   npm install
+2. Definir GEMINI_API_KEY em .env.local
+3. Arrancar localmente:
+   npm run dev
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Deploy
+
+O deploy e feito automaticamente por GitHub Actions para GitHub Pages em cada push para a branch main.
+
+Workflow: .github/workflows/deploy.yml
