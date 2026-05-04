@@ -49,6 +49,7 @@ export default function App() {
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [copying, setCopying] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   const [newName, setNewName] = useState('');
   const [newItemName, setNewItemName] = useState('');
@@ -78,11 +79,20 @@ export default function App() {
     const sessionDoc = doc(db, 'sessions', roomId);
     getDoc(sessionDoc).then(docSnap => {
       if (!docSnap.exists()) {
-        setDoc(sessionDoc, { createdAt: serverTimestamp() });
+        // New room – generate an owner token and persist it locally
+        const ownerId = crypto.randomUUID();
+        localStorage.setItem(`owner_${roomId}`, ownerId);
+        setIsOwner(true);
+        setDoc(sessionDoc, { createdAt: serverTimestamp(), ownerId });
         // Seed initial menu for new rooms
         INITIAL_MENU.forEach(item => {
           setDoc(doc(db, 'sessions', roomId, 'menu', item.id), item);
         });
+      } else {
+        // Existing room – check if the local token matches
+        const storedOwnerId = localStorage.getItem(`owner_${roomId}`);
+        const sessionOwnerId = docSnap.data()?.ownerId;
+        setIsOwner(!!storedOwnerId && storedOwnerId === sessionOwnerId);
       }
     });
 
@@ -211,10 +221,13 @@ export default function App() {
     if (resetState === 'idle') {
       setResetState('confirm');
     } else {
-      // Delete all friends for reset
-      friends.forEach(async f => {
-        await deleteDoc(doc(db, 'sessions', roomId, 'friends', f.id));
-      });
+      // Delete all friends
+      await Promise.all(friends.map(f => deleteDoc(doc(db, 'sessions', roomId, 'friends', f.id))));
+
+      // Reset the session document (preserving ownerId so ownership is maintained)
+      const ownerId = localStorage.getItem(`owner_${roomId}`);
+      await setDoc(doc(db, 'sessions', roomId), { createdAt: serverTimestamp(), ownerId });
+
       setResetState('idle');
     }
   };
@@ -306,23 +319,33 @@ export default function App() {
           </div>
           <div className="flex gap-2">
             <button 
-              onClick={() => setShowSettings(!showSettings)}
-              className={`p-2.5 rounded-full transition-all ${showSettings ? 'bg-neutral-900 text-white' : 'text-neutral-400 hover:bg-neutral-100'}`}
+              onClick={() => isOwner && setShowSettings(!showSettings)}
+              className={`p-2.5 rounded-full transition-all ${showSettings ? 'bg-neutral-900 text-white' : isOwner ? 'text-neutral-400 hover:bg-neutral-100' : 'text-neutral-300 cursor-not-allowed'}`} // NOSONAR – nested ternary is intentional for Tailwind class composition
+              title={isOwner ? undefined : 'Apenas o dono da mesa pode alterar as configurações'}
               id="settings-trigger"
             >
               <Settings2 size={20} />
             </button>
-            <button 
-              onClick={handleReset}
-              className={`p-2.5 rounded-full transition-all flex items-center shadow-sm border ${resetState === 'confirm' ? 'bg-red-500 text-white border-red-500' : 'text-neutral-400 bg-white border-neutral-200 hover:text-red-50'}`}
-              id="reset-trigger"
-            >
-              {resetState === 'confirm' ? (
-                <span className="text-[10px] font-black uppercase px-2">Limpar?</span>
-              ) : (
-                <RotateCcw size={20} />
-              )}
-            </button>
+            {isOwner ? (
+              <button 
+                onClick={handleReset}
+                className={`p-2.5 rounded-full transition-all flex items-center shadow-sm border ${resetState === 'confirm' ? 'bg-red-500 text-white border-red-500' : 'text-neutral-400 bg-white border-neutral-200 hover:text-red-50'}`}
+                id="reset-trigger"
+              >
+                {resetState === 'confirm' ? (
+                  <span className="text-[10px] font-black uppercase px-2">Limpar?</span>
+                ) : (
+                  <RotateCcw size={20} />
+                )}
+              </button>
+            ) : (
+              <div
+                title="Apenas o dono da mesa pode fazer reset"
+                className="p-2.5 rounded-full flex items-center shadow-sm border text-neutral-300 bg-white border-neutral-200 cursor-not-allowed"
+              >
+                <Lock size={20} />
+              </div>
+            )}
           </div>
         </div>
 
