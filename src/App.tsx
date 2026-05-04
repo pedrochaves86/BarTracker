@@ -224,7 +224,7 @@ export default function App() {
   };
 
   const handleReset = async () => {
-    if (!roomId) return;
+    if (!roomId || friends.length === 0) return;
     if (resetState === 'idle') {
       setResetState('confirm');
     } else {
@@ -339,7 +339,9 @@ export default function App() {
             {isOwner ? (
               <button 
                 onClick={handleReset}
-                className={`p-2.5 rounded-full transition-all flex items-center shadow-sm border ${resetState === 'confirm' ? 'bg-red-500 text-white border-red-500' : 'text-neutral-400 bg-white border-neutral-200 hover:text-red-50'}`}
+                disabled={friends.length === 0}
+                title={friends.length === 0 ? 'Adiciona alguém à mesa antes de limpar' : undefined}
+                className={`p-2.5 rounded-full transition-all flex items-center shadow-sm border ${friends.length === 0 ? 'text-neutral-200 bg-white border-neutral-100 cursor-not-allowed' : resetState === 'confirm' ? 'bg-red-500 text-white border-red-500' : 'text-neutral-400 bg-white border-neutral-200 hover:text-red-50'}`}
                 id="reset-trigger"
               >
                 {resetState === 'confirm' ? (
