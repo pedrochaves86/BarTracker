@@ -79,15 +79,22 @@ export default function App() {
     const sessionDoc = doc(db, 'sessions', roomId);
     getDoc(sessionDoc).then(docSnap => {
       if (!docSnap.exists()) {
-        // New room – generate an owner token and persist it locally
-        const ownerId = crypto.randomUUID();
-        localStorage.setItem(`owner_${roomId}`, ownerId);
-        setIsOwner(true);
-        setDoc(sessionDoc, { createdAt: serverTimestamp(), ownerId });
-        // Seed initial menu for new rooms
-        INITIAL_MENU.forEach(item => {
-          setDoc(doc(db, 'sessions', roomId, 'menu', item.id), item);
-        });
+        const existingOwnerId = localStorage.getItem(`owner_${roomId}`);
+        if (existingOwnerId) {
+          // Owner returning after a reset – recreate the session with the same token
+          setIsOwner(true);
+          setDoc(sessionDoc, { createdAt: serverTimestamp(), ownerId: existingOwnerId });
+          // Menu subcollection is preserved; do not reseed
+        } else {
+          // Brand new room – generate an owner token and seed the menu
+          const ownerId = crypto.randomUUID();
+          localStorage.setItem(`owner_${roomId}`, ownerId);
+          setIsOwner(true);
+          setDoc(sessionDoc, { createdAt: serverTimestamp(), ownerId });
+          INITIAL_MENU.forEach(item => {
+            setDoc(doc(db, 'sessions', roomId, 'menu', item.id), item);
+          });
+        }
       } else {
         // Existing room – check if the local token matches
         const storedOwnerId = localStorage.getItem(`owner_${roomId}`);
@@ -224,7 +231,10 @@ export default function App() {
       // Delete all friends
       await Promise.all(friends.map(f => deleteDoc(doc(db, 'sessions', roomId, 'friends', f.id))));
 
-      // Reset the session document (preserving ownerId so ownership is maintained)
+      // Delete the session document (ownerId token stays in localStorage to preserve ownership)
+      await deleteDoc(doc(db, 'sessions', roomId));
+
+      // Immediately recreate the session so the app remains consistent without a page refresh
       const ownerId = localStorage.getItem(`owner_${roomId}`);
       await setDoc(doc(db, 'sessions', roomId), { createdAt: serverTimestamp(), ownerId });
 
